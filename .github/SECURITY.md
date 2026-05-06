@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-We are committed to providing security updates for the current major version of CyberScreensaver.
+We are committed to providing security updates for the current major version of Maintenance OS.
 
 | Version | Supported |
 |---------|-----------|
@@ -15,7 +15,7 @@ We are committed to providing security updates for the current major version of 
 
 If you discover a potential security vulnerability in this project, please report it to us through one of the following methods:
 
-- **Email**: security@softcurse.com
+- **Email**: security@beardicuss.com
 - **Private Vulnerability Reporting**: Use the "Report a vulnerability" button on the GitHub repository security tab.
 
 ### What to include in the report:
@@ -33,7 +33,7 @@ If you discover a potential security vulnerability in this project, please repor
 
 ## Security Advisories
 
-Security advisories will be published via [GitHub Security Advisories](https://github.com/Softcurse/CyberScreensaver/security/advisories).
+Security advisories will be published via [GitHub Security Advisories](https://github.com/Beardicuss/Maintenance-OS/security/advisories).
 
 ## Out of Scope
 
@@ -45,7 +45,7 @@ The following are generally considered out of scope for our security policy:
 
 ## Bug Bounty
 
-Currently, CyberScreensaver does not have a formal bug bounty program. We are a community-driven project and appreciate your voluntary assistance in keeping the project secure.
+Currently, Maintenance OS does not have a formal bug bounty program. We are a community-driven project and appreciate your voluntary assistance in keeping the project secure.
 
 ## Security Best Practices for Contributors
 

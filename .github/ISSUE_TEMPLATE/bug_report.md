@@ -28,7 +28,7 @@ assignees: ''
 
 ### Environment
 - **Operating System**: [Windows 10 / Windows 11 / Other]
-- **CyberScreensaver Version**: [e.g. 1.0.2]
+- **Maintenance OS Version**: [e.g. 1.0.2]
 - **.NET Runtime version**: [e.g. 8.0]
 - **Installation Method**: [e.g. build.bat / manual copy to System32]
 

@@ -1,6 +1,6 @@
-# Contributing to CyberScreensaver
+# Contributing to Maintenance OS
 
-First off, thank you for considering contributing to Softcurse Lab! It's people like you that make CyberScreensaver such a great tool for the community.
+First off, thank you for considering contributing to Maintenance OS! It's people like you that make Maintenance OS such a great tool for the community.
 
 By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -20,7 +20,7 @@ There are many ways you can contribute, and not all of them require writing code
 
 ## 🐛 Reporting Bugs
 
-Before creating bug reports, please check our [issue tracker](https://github.com/Softcurse/CyberScreensaver/issues) to see if the problem has already been reported.
+Before creating bug reports, please check our [issue tracker](https://github.com/Beardicuss/Maintenance-OS/issues) to see if the problem has already been reported.
 
 When reporting a bug, please include:
 - A clear, descriptive title.
@@ -47,8 +47,8 @@ We are always looking for new ideas! If you have a feature request:
 ### 1. Fork & Clone
 Fork the repository on GitHub and clone it locally:
 ```bash
-git clone https://github.com/YOUR_USERNAME/CyberScreensaver.git
-cd CyberScreensaver
+git clone https://github.com/Beardicuss/Maintenance-OS.git
+cd Maintenance-OS
 ```
 
 ### 2. Prerequisites
@@ -131,6 +131,6 @@ Maintainers cut releases by:
 
 ## 💬 Getting Help
 
-If you have questions, please use [GitHub Discussions](https://github.com/Softcurse/CyberScreensaver/discussions) or reach out via **security@softcurse.com** for sensitive matters.
+If you have questions, please use [GitHub Discussions](https://github.com/Beardicuss/Maintenance-OS/discussions) or reach out via **security@beardicuss.com** for sensitive matters.
 
 Thank you for contributing! 🚀
