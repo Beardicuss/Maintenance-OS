@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>SoftcurseLab</AssemblyName>
+    <RootNamespace>SoftcurseLab</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>false</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WebView2 for the cyberpunk HTML/JS UI shell -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2592.51" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Include CyberUI.html in build output (preserves UI\ subdir) -->
+    <Content Include="UI\CyberUI.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- After publish: also copy CyberUI.html flat to publish root -->
+  <Target Name="FlattenCyberUIAfterPublish" AfterTargets="Publish">
+    <Copy SourceFiles="UI\CyberUI.html"
+          DestinationFolder="$(PublishDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- After build: also copy CyberUI.html flat to output root (for F5/Debug) -->
+  <Target Name="FlattenCyberUIAfterBuild" AfterTargets="Build">
+    <Copy SourceFiles="UI\CyberUI.html"
+          DestinationFolder="$(OutputPath)"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>

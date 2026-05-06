@@ -1,0 +1,84 @@
+<Window x:Class="SoftcurseLab.UI.ConfigWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Softcurse LAB — Configuration"
+        Width="520" Height="560"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Background="#080810">
+    <Window.Resources>
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#88aabbcc"/>
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,6,0,0"/>
+        </Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="Foreground" Value="#88aabbcc"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="Background" Value="#15ffffff"/>
+            <Setter Property="Foreground" Value="#00ccff"/>
+            <Setter Property="BorderBrush" Value="#400ff0ff"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="◈  CYBER MAINTENANCE SCREENSAVER" FontSize="15" FontWeight="Bold" Foreground="#00ccff">
+                <TextBlock.Effect>
+                    <DropShadowEffect Color="#00ccff" BlurRadius="10" ShadowDepth="0" Opacity="0.8"/>
+                </TextBlock.Effect>
+            </TextBlock>
+            <TextBlock Text="// configure active maintenance tasks" FontSize="10" Margin="0,4,0,0"/>
+            <Rectangle Height="1" Fill="#200ff0ff" Margin="0,10,0,0"/>
+        </StackPanel>
+
+        <!-- Admin note -->
+        <Border Grid.Row="1" Background="#10ffcc00" BorderBrush="#30ffcc00"
+                BorderThickness="1" Padding="12,8" Margin="0,0,0,16">
+            <TextBlock TextWrapping="Wrap" FontSize="10" Foreground="#aacc88">
+                ⚠  Tasks marked [ADMIN] require the screensaver to run as Administrator.
+                Right-click SoftcurseLab.scr → Run as administrator.
+                Non-admin tasks run at any privilege level.
+            </TextBlock>
+        </Border>
+
+        <!-- Task toggles -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="TaskPanel">
+                <TextBlock Text="── NON-PRIVILEGED TASKS ──" Foreground="#30aaccff" FontSize="10" Margin="0,0,0,4"/>
+                <CheckBox x:Name="CbDefender"  Content="Windows Defender Quick Scan  [user]" IsChecked="True"/>
+                <CheckBox x:Name="CbBrowser"   Content="Browser Cache Purge — Chrome / Edge / Firefox  [user]" IsChecked="True"/>
+                <CheckBox x:Name="CbIntegrity" Content="File Integrity Monitor — System32 / SysWOW64  [user]" IsChecked="True"/>
+                <CheckBox x:Name="CbProcessGuard" Content="Malicious Process Guard — SHA256 hash check  [user]" IsChecked="True"/>
+
+                <TextBlock Text="── PRIVILEGED TASKS ──" Foreground="#30aaccff" FontSize="10" Margin="0,16,0,4"/>
+                <CheckBox x:Name="CbDefrag"    Content="Auto Defragmentation — NTFS volumes  [ADMIN]" IsChecked="True"/>
+                <CheckBox x:Name="CbCleanup"   Content="Disk Cleanup — all categories (sageset 64)  [ADMIN]" IsChecked="True"/>
+                <CheckBox x:Name="CbDism"      Content="DISM Component Store Cleanup + /ResetBase  [ADMIN]" IsChecked="True"/>
+                <CheckBox x:Name="CbDrivers"   Content="Driver Health Check + SFC verify  [ADMIN]" IsChecked="True"/>
+
+                <Rectangle Height="1" Fill="#150ff0ff" Margin="0,16,0,12"/>
+                <TextBlock Text="Settings are saved to %APPDATA%\SoftcurseLab\config.ini" FontSize="9" Foreground="#224466"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="[ PREVIEW ]" Click="BtnPreview_Click" Margin="0,0,10,0"/>
+            <Button Content="[ SAVE &amp; CLOSE ]" Click="BtnSave_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

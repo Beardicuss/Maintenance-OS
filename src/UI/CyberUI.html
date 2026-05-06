@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>SOFTCURSE LAB</title>
+<!-- No external font dependencies — all system fonts, works offline in screensaver context -->
+<style>
+/* Font stack: Bebas Neue → Impact/Arial Narrow (display), Consolas → Courier New (mono), system (body) */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100vh;overflow:hidden;background:#020202;}
+:root{
+  --c:#00ffc8;--c2:#00ffff;--b:#0088ff;--o:#ff6b35;--m:#ff00ff;
+  --bg:#020202;--ps:rgba(5,8,16,0.87);--br:rgba(0,255,255,0.1);
+  --brh:rgba(0,255,255,0.38);
+  --fd:'Impact','Arial Narrow',Arial,sans-serif;
+  --fm:'Consolas','Courier New',Courier,monospace;
+  --fb:'Segoe UI',Arial,system-ui,sans-serif;
+}
+.cs{
+  background:var(--bg);
+  background-image:linear-gradient(rgba(0,255,255,0.030) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,255,255,0.030) 1px,transparent 1px);
+  background-size:40px 40px;
+  height:100vh;font-family:var(--fb);color:#d0eaf5;
+  position:relative;overflow:hidden;display:flex;flex-direction:column;
+  user-select:none;-webkit-user-select:none;
+}
+.scanlines{position:absolute;inset:0;pointer-events:none;z-index:950;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.055) 3px,rgba(0,0,0,0.055) 4px);
+  animation:scan 14s linear infinite;will-change:background-position;}
+@keyframes scan{0%{background-position:0 0}100%{background-position:0 240px}}
+.panel{background:var(--ps);border:1px solid var(--br);position:relative;overflow:hidden;
+  transition:border-color .2s,box-shadow .2s;}
+.panel:hover{border-color:var(--brh);box-shadow:0 0 14px rgba(0,255,255,0.1);}
+.pglow{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,255,200,0.05),transparent 65%);}
+.ctl,.ctr,.cbl,.cbr{position:absolute;width:10px;height:10px;
+  border-color:rgba(0,255,200,0.5);border-style:solid;z-index:2;pointer-events:none;}
+.ctl{top:3px;left:3px;border-width:1px 0 0 1px}.ctr{top:3px;right:3px;border-width:1px 1px 0 0}
+.cbl{bottom:3px;left:3px;border-width:0 0 1px 1px}.cbr{bottom:3px;right:3px;border-width:0 1px 1px 0}
+.slbl{font-family:var(--fm);font-size:10px;letter-spacing:3px;color:rgba(0,255,200,0.4);
+  text-transform:uppercase;display:flex;align-items:center;gap:6px;margin-bottom:9px;}
+.slbl::before{content:'◆';color:var(--c);font-size:7px;}
+
+/* ── TOPBAR ── */
+.topbar{height:46px;background:rgba(0,4,9,0.98);border-bottom:1px solid var(--br);
+  display:flex;align-items:center;padding:0 18px;gap:0;flex-shrink:0;z-index:10;}
+.logo{font-family:var(--fd);font-size:21px;letter-spacing:6px;color:var(--c);
+  text-shadow:0 0 18px rgba(0,255,200,0.55);white-space:nowrap;margin-right:16px;}
+.logo em{color:var(--m);font-style:normal;}
+.tbstat{font-family:var(--fm);font-size:10px;letter-spacing:2px;color:rgba(0,255,200,0.45);
+  display:flex;align-items:center;gap:7px;border-left:1px solid var(--br);padding:0 16px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--c);box-shadow:0 0 6px var(--c);}
+.dot.o{background:var(--o);box-shadow:0 0 6px var(--o);}
+.dot.b{background:var(--b);box-shadow:0 0 6px var(--b);}
+.dot.p{animation:dpulse 2s ease-in-out infinite;}
+@keyframes dpulse{0%,100%{opacity:1}50%{opacity:0.35}}
+.tsep{flex:1}
+.tdate{font-family:var(--fm);font-size:10px;letter-spacing:2px;color:rgba(0,255,200,0.28);}
+
+/* ── MAIN GRID ── */
+.main{flex:1;display:grid;grid-template-columns:258px 1fr 260px;
+  gap:8px;padding:8px;overflow:hidden;min-height:0;}
+
+/* ── LEFT: TASK CARDS ── */
+.left{display:flex;flex-direction:column;gap:5px;overflow:hidden;min-height:0;}
+.tcard{background:var(--ps);border:1px solid var(--br);padding:9px 11px;
+  position:relative;transition:border-color .2s,box-shadow .2s;flex-shrink:0;cursor:default;}
+.tcard:hover{border-color:var(--brh);box-shadow:0 0 12px rgba(0,255,255,0.1);}
+.tch{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.tcn{font-family:var(--fd);font-size:14px;letter-spacing:2px;color:var(--c);}
+.bdg{font-family:var(--fm);font-size:8px;letter-spacing:2px;padding:2px 6px;
+  text-transform:uppercase;border:1px solid;flex-shrink:0;}
+.b-idle{color:rgba(0,255,200,0.32);border-color:rgba(0,255,200,0.14);}
+.b-run{color:var(--o);border-color:rgba(255,107,53,0.4);animation:blink 1.5s ease-in-out infinite;}
+.b-done{color:var(--c);border-color:rgba(0,255,200,0.38);}
+.b-q{color:rgba(0,136,255,0.7);border-color:rgba(0,136,255,0.25);}
+.b-err{color:var(--m);border-color:rgba(255,0,255,0.38);animation:blink .8s ease-in-out infinite;}
+.b-wrn{color:#ffcc00;border-color:rgba(255,204,0,0.35);}
+.b-skip{color:rgba(0,255,200,0.22);border-color:rgba(0,255,200,0.08);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.52}}
+.tcm{font-family:var(--fm);font-size:9px;color:rgba(0,200,180,0.36);
+  letter-spacing:0.5px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tcm b{color:rgba(0,255,200,0.62);font-weight:normal;}
+.pbg{height:2px;background:rgba(0,255,200,0.07);overflow:hidden;}
+.pb{height:100%;background:var(--c);transition:width .8s;}
+.pb.ind{background:linear-gradient(90deg,transparent,var(--o),transparent);
+  background-size:220%;animation:ind 1.2s linear infinite;width:100%!important;}
+@keyframes ind{from{background-position:220% 0}to{background-position:-220% 0}}
+
+/* ── CENTER ── */
+.center{display:flex;flex-direction:column;gap:8px;min-height:0;}
+.clock-panel{flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:var(--ps);border:1px solid var(--br);
+  position:relative;overflow:hidden;transition:border-color .2s;}
+.hsvg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+.ra{transform-box:fill-box;transform-origin:center;animation:rcw 22s linear infinite;}
+.rb{transform-box:fill-box;transform-origin:center;animation:rccw 35s linear infinite;}
+.rc{transform-box:fill-box;transform-origin:center;animation:rcw 60s linear infinite;}
+@keyframes rcw{to{transform:rotate(360deg)}}
+@keyframes rccw{to{transform:rotate(-360deg)}}
+.clk{font-family:var(--fd);font-size:74px;letter-spacing:8px;color:var(--c);
+  text-shadow:0 0 30px rgba(0,255,200,0.32),0 0 60px rgba(0,255,200,0.1);
+  z-index:2;line-height:1;position:relative;}
+.clk.glitch{animation:cg .45s steps(4) forwards;}
+@keyframes cg{
+  0%{text-shadow:4px 0 var(--m),-4px 0 var(--c2),0 0 30px rgba(0,255,200,0.3);
+     transform:skewX(-1.5deg) translateX(4px);}
+  25%{text-shadow:-5px 0 var(--m),5px 0 var(--c2);transform:skewX(2deg) translateX(-4px);}
+  50%{text-shadow:3px 0 var(--m),-3px 0 var(--c2);transform:skewX(-0.5deg) translateX(2px);}
+  75%{text-shadow:-1px 0 var(--m),1px 0 var(--c2);}
+  100%{text-shadow:0 0 30px rgba(0,255,200,0.32),0 0 60px rgba(0,255,200,0.1);transform:none;}}
+.clkd{font-family:var(--fm);font-size:11px;letter-spacing:5px;color:rgba(0,255,200,0.45);
+  z-index:2;margin-top:6px;}
+.clkm{font-family:var(--fm);font-size:10px;letter-spacing:3px;color:var(--o);
+  z-index:2;margin-top:12px;animation:dpulse 2.5s infinite;}
+.vitals{height:72px;background:var(--ps);border:1px solid var(--br);
+  display:grid;grid-template-columns:repeat(4,1fr);flex-shrink:0;overflow:hidden;}
+.vit{padding:10px 13px;border-right:1px solid var(--br);display:flex;flex-direction:column;gap:2px;}
+.vit:last-child{border-right:none;}
+.vl{font-family:var(--fm);font-size:9px;letter-spacing:2px;
+  color:rgba(0,255,200,0.36);text-transform:uppercase;}
+.vv{font-family:var(--fm);font-size:21px;font-weight:700;color:var(--c);line-height:1;}
+.vv.o{color:var(--o)}.vv.b{color:var(--b)}
+.vs{font-family:var(--fm);font-size:9px;color:rgba(0,255,200,0.26);}
+
+/* ── RIGHT PANEL ── */
+.right{display:flex;flex-direction:column;gap:7px;min-height:0;overflow:hidden;}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;flex-shrink:0;}
+.scard{background:var(--ps);border:1px solid var(--br);padding:9px 11px;
+  position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s;cursor:default;}
+.scard:hover{border-color:var(--brh);box-shadow:0 0 12px rgba(0,255,255,0.1);}
+.slb{font-family:var(--fm);font-size:9px;letter-spacing:2px;
+  color:rgba(0,255,200,0.36);text-transform:uppercase;margin-bottom:4px;}
+.sv{font-family:var(--fm);font-size:28px;font-weight:700;color:var(--c);line-height:1;}
+.sv.o{color:var(--o)}.sv.g{color:#00ff88}.sv.m{color:var(--m)}
+.ss{font-family:var(--fm);font-size:9px;color:rgba(0,255,200,0.26);}
+.threats{flex:1;background:var(--ps);border:1px solid var(--br);
+  padding:11px 12px;overflow:hidden;position:relative;}
+.tr{margin-bottom:9px;}.tr:last-child{margin-bottom:0;}
+.trh{display:flex;justify-content:space-between;margin-bottom:4px;}
+.tn{font-family:var(--fm);font-size:9px;color:rgba(0,255,200,0.52);letter-spacing:1px;}
+.tnum{font-family:var(--fm);font-size:10px;font-weight:700;color:var(--c);}
+.tbg{height:3px;background:rgba(0,255,200,0.07);overflow:hidden;}
+.tbar{height:100%;background:linear-gradient(90deg,var(--c),var(--b));transition:width 1.2s ease;}
+.tbar.w{background:linear-gradient(90deg,var(--o),#ffaa00);}
+.tbar.e{background:linear-gradient(90deg,var(--m),#ff4488);}
+.fwpanel{background:var(--ps);border:1px solid var(--br);
+  padding:10px 12px;position:relative;overflow:hidden;flex-shrink:0;}
+
+/* ── TERMINAL ── */
+.terminal{height:148px;background:rgba(0,2,5,0.99);
+  border-top:1px solid var(--br);display:flex;flex-direction:column;flex-shrink:0;}
+.thdr{padding:6px 16px;border-bottom:1px solid var(--br);
+  display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.tlog{flex:1;overflow-y:auto;padding:5px 16px;
+  display:flex;flex-direction:column;gap:1px;}
+.tlog::-webkit-scrollbar{width:4px;}
+.tlog::-webkit-scrollbar-track{background:transparent;}
+.tlog::-webkit-scrollbar-thumb{background:rgba(0,255,200,0.13);border-radius:2px;}
+.ll{font-family:var(--fm);font-size:11px;display:flex;gap:10px;line-height:1.6;flex-shrink:0;}
+.lts{color:rgba(0,255,200,0.26);flex-shrink:0;min-width:68px;}
+.lsrc{flex-shrink:0;min-width:76px;font-weight:700;letter-spacing:1px;}
+.lsrc.sys{color:var(--c2)}.lsrc.def{color:var(--b)}.lsrc.thr{color:var(--m)}
+.lsrc.wrn{color:var(--o)}.lsrc.ok{color:#00ff88}.lsrc.err{color:var(--m)}
+.lmsg{color:rgba(170,205,220,0.52);}
+
+/* ── GLITCH TEARS ── */
+#tear1,#tear2{position:absolute;left:0;right:260px;pointer-events:none;z-index:800;
+  display:none;height:2px;background:rgba(255,0,255,0.32);}
+</style>
+</head>
+<body>
+<div class="cs">
+<div class="scanlines"></div>
+<div id="tear1"></div>
+<div id="tear2" style="height:1px;background:rgba(0,255,255,0.25)"></div>
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div class="logo">SOFT<em>CURSE</em> LAB</div>
+  <div class="tbstat"><div class="dot p"></div>SYS ONLINE</div>
+  <div class="tbstat"><div class="dot b"></div>NET SECURE</div>
+  <div class="tbstat" id="tb-active"><div class="dot o p"></div>INITIALISING...</div>
+  <div class="tsep"></div>
+  <div class="tbstat" style="border-left:none;"><span class="tdate" id="tdate"></span></div>
+</div>
+
+<!-- ── MAIN 3-COLUMN LAYOUT ── -->
+<div class="main">
+
+  <!-- ── LEFT: TASK CARDS ── -->
+  <div class="left">
+    <div class="slbl">MAINTENANCE TASKS</div>
+
+    <div class="tcard" id="tc-defrag">
+      <div class="ctl"></div><div class="ctr"></div><div class="cbl"></div><div class="cbr"></div>
+      <div class="tch"><span class="tcn">DEFRAG</span><span class="bdg b-q" id="bdg-defrag">QUEUED</span></div>
+      <div class="tcm" id="meta-defrag">NTFS VOLUMES · <b>DEFRAG.EXE</b></div>
+      <div class="pbg"><div class="pb" id="pb-defrag" style="width:0%"></div></div>
+    </div>
+
+    <div class="tcard" id="tc-dism">
+      <div class="ctl"></div><div class="ctr"></div><div class="cbl"></div><div class="cbr"></div>
+      <div class="tch"><span class="tcn">COMPONENT STORE</span><span class="bdg b-q" id="bdg-dism">QUEUED</span></div>
+      <div class="tcm" id="meta-dism">DISM <b>/STARTCOMPONENTCLEANUP</b></div>
+      <div class="pbg"><div class="pb" id="pb-dism" style="width:0%"></div></div>
+    </div>
+
+    <div class="tcard" id="tc-defender">
+      <div class="ctl"></div><div class="ctr"></div><div class="cbl"></div><div class="cbr"></div>
+      <div class="tch"><span class="tcn">DEFENDER SCAN</span><span class="bdg b-q" id="bdg-defender">QUEUED</span></div>
+      <div class="tcm" id="meta-defender">MPCMDRUN.EXE <b>-SCANTYPE 1</b></div>
+      <div class="pbg"><div class="pb" id="pb-defender" style="width:0%"></div></div>
+    </div>
+
+    <div class="tcard" id="tc-process">
+      <div class="ctl"></div><div class="ctr"></div><div class="cbl"></div><div class="cbr"></div>
+      <div class="tch"><span class="tcn">PROCESS MONITOR</span><span class="bdg b-q" id="bdg-process">QUEUED</span></div>
+      <div class="tcm" id="meta-process">SHA-256 HASH CHECK · <b>ALL PROCS</b></div>
+      <div class="pbg"><div class="pb" id="pb-process" style="width:0%"></div></div>
+    </div>
+
+    <div class="tcard" id="tc-cache">
+      <div class="ctl"></div><div class="ctr"></div><div class="cbl"></div><div class="cbr"></div>
+      <div class="tch"><span class="tcn">BROWSER CACHE</span><span class="bdg b-q" id="bdg-cache">QUEUED</span></div>
+      <div class="tcm" id="meta-cache">CHROME · EDGE · <b>FIREFOX</b></div>
+      <div class="pbg"><div class="pb" id="pb-cache" style="width:0%"></div></div>
+    </div>
+
+    <div class="tcard" id="tc-driver">
+      <div class="ctl"></div><div class="ctr"></div><div class="cbl"></div><div class="cbr"></div>
+      <div class="tch"><span class="tcn">DRIVER HEALTH</span><span class="bdg b-q" id="bdg-driver">QUEUED</span></div>
+      <div class="tcm" id="meta-driver">PNPUTIL + <b>SFC /VERIFYONLY</b></div>
+      <div class="pbg"><div class="pb" id="pb-driver" style="width:0%"></div></div>
+    </div>
+
+    <div class="tcard" id="tc-cleanup">
+      <div class="ctl"></div><div class="ctr"></div><div class="cbl"></div><div class="cbr"></div>
+      <div class="tch"><span class="tcn">DISK CLEANUP</span><span class="bdg b-q" id="bdg-cleanup">QUEUED</span></div>
+      <div class="tcm" id="meta-cleanup">CLEANMGR <b>/SAGERUN:64</b></div>
+      <div class="pbg"><div class="pb" id="pb-cleanup" style="width:0%"></div></div>
+    </div>
+
+    <div class="tcard" id="tc-integrity">
+      <div class="ctl"></div><div class="ctr"></div><div class="cbl"></div><div class="cbr"></div>
+      <div class="tch"><span class="tcn">FILE INTEGRITY</span><span class="bdg b-run" id="bdg-integrity">WATCHING</span></div>
+      <div class="tcm" id="meta-integrity">SYSTEM32 · <b>SYSWOW64</b> · STARTUP</div>
+      <div class="pbg"><div class="pb ind" id="pb-integrity"></div></div>
+    </div>
+  </div>
+
+  <!-- ── CENTER: CLOCK + VITALS ── -->
+  <div class="center">
+    <div class="clock-panel">
+      <div class="pglow"></div>
+      <div class="ctl"></div><div class="ctr"></div><div class="cbl"></div><div class="cbr"></div>
+      <svg width="440" height="440" viewBox="0 0 440 440" class="hsvg">
+        <circle cx="220" cy="220" r="200" fill="none" stroke="rgba(0,255,200,0.055)"
+          stroke-width="0.5" stroke-dasharray="3 11" class="ra"/>
+        <polygon points="220,72 353,147 353,297 220,372 87,297 87,147" fill="none"
+          stroke="rgba(0,136,255,0.09)" stroke-width="0.5" class="rb"/>
+        <circle cx="220" cy="220" r="154" fill="none" stroke="rgba(0,255,200,0.065)"
+          stroke-width="0.5" stroke-dasharray="2 9" class="ra"/>
+        <polygon points="220,118 286,156 286,284 220,322 154,284 154,156" fill="none"
+          stroke="rgba(0,255,200,0.075)" stroke-width="0.5" class="rc"/>
+        <circle cx="220" cy="220" r="96" fill="none" stroke="rgba(0,136,255,0.055)"
+          stroke-width="0.5" stroke-dasharray="1 6" class="rb"/>
+        <g class="ra" style="transform-box:fill-box;transform-origin:center">
+          <line x1="220" y1="20" x2="220" y2="33" stroke="rgba(0,255,200,0.28)" stroke-width="1"/>
+          <line x1="220" y1="407" x2="220" y2="420" stroke="rgba(0,255,200,0.28)" stroke-width="1"/>
+          <line x1="20" y1="220" x2="33" y2="220" stroke="rgba(0,255,200,0.28)" stroke-width="1"/>
+          <line x1="407" y1="220" x2="420" y2="220" stroke="rgba(0,255,200,0.28)" stroke-width="1"/>
+          <line x1="119" y1="52" x2="125" y2="64" stroke="rgba(0,255,200,0.16)" stroke-width="0.5"/>
+          <line x1="321" y1="52" x2="315" y2="64" stroke="rgba(0,255,200,0.16)" stroke-width="0.5"/>
+          <line x1="119" y1="388" x2="125" y2="376" stroke="rgba(0,255,200,0.16)" stroke-width="0.5"/>
+          <line x1="321" y1="388" x2="315" y2="376" stroke="rgba(0,255,200,0.16)" stroke-width="0.5"/>
+        </g>
+      </svg>
+      <div class="clk" id="clk">00:00:00</div>
+      <div class="clkd" id="clkd">--- --- --  //  ----</div>
+      <div class="clkm" id="clkm">◈ INITIALISING MAINTENANCE DAEMON...</div>
+    </div>
+    <div class="vitals panel" style="transition:none;">
+      <div class="pglow"></div>
+      <div class="vit">
+        <div class="vl">CPU LOAD</div>
+        <div class="vv" id="vcpu">—%</div>
+        <div class="vs" id="vcpus">— CORES</div>
+      </div>
+      <div class="vit">
+        <div class="vl">MEMORY</div>
+        <div class="vv" id="vram">—.—GB</div>
+        <div class="vs" id="vramt">OF —GB</div>
+      </div>
+      <div class="vit">
+        <div class="vl">NETWORK</div>
+        <div class="vv b" id="vnet">—KB/s</div>
+        <div class="vs">OUTBOUND</div>
+      </div>
+      <div class="vit">
+        <div class="vl">DISK FREE</div>
+        <div class="vv" id="vdsk">—GB</div>
+        <div class="vs" id="vdskl">C:\ NTFS</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: STATS + THREAT MATRIX ── -->
+  <div class="right">
+    <div class="slbl">SYSTEM HEALTH</div>
+    <div class="sgrid">
+      <div class="scard"><div class="ctl"></div><div class="cbr"></div>
+        <div class="slb">FILES SCANNED</div>
+        <div class="sv" id="rfiles">0</div>
+        <div class="ss">THIS SESSION</div>
+      </div>
+      <div class="scard"><div class="ctl"></div><div class="cbr"></div>
+        <div class="slb">SPACE FREED</div>
+        <div class="sv o" id="rspace">0MB</div>
+        <div class="ss">RECLAIMED</div>
+      </div>
+      <div class="scard"><div class="ctl"></div><div class="cbr"></div>
+        <div class="slb">THREATS KILLED</div>
+        <div class="sv g" id="rthr">0</div>
+        <div class="ss" id="rthrss">ALL CLEAR</div>
+      </div>
+      <div class="scard"><div class="ctl"></div><div class="cbr"></div>
+        <div class="slb">INTEGRITY</div>
+        <div class="sv" id="rint">—</div>
+        <div class="ss">SCORE / 100</div>
+      </div>
+    </div>
+
+    <div class="threats panel" style="transition:none;">
+      <div class="pglow"></div>
+      <div class="ctl"></div><div class="ctr"></div><div class="cbl"></div><div class="cbr"></div>
+      <div class="slbl">THREAT MATRIX</div>
+      <div class="tr"><div class="trh"><span class="tn">PROCESS INJECTION</span>
+        <span class="tnum" id="ti0">—</span></div>
+        <div class="tbg"><div class="tbar" id="tb0" style="width:0%"></div></div></div>
+      <div class="tr"><div class="trh"><span class="tn">SUSPICIOUS FILES</span>
+        <span class="tnum" id="ti1">—</span></div>
+        <div class="tbg"><div class="tbar" id="tb1" style="width:0%"></div></div></div>
+      <div class="tr"><div class="trh"><span class="tn">NETWORK ANOMALY</span>
+        <span class="tnum" id="ti2">—</span></div>
+        <div class="tbg"><div class="tbar w" id="tb2" style="width:0%"></div></div></div>
+      <div class="tr"><div class="trh"><span class="tn">INTEGRITY ALERTS</span>
+        <span class="tnum" id="ti3">—</span></div>
+        <div class="tbg"><div class="tbar" id="tb3" style="width:0%"></div></div></div>
+      <div class="tr"><div class="trh"><span class="tn">MALICIOUS HASHES</span>
+        <span class="tnum" id="ti4">0</span></div>
+        <div class="tbg"><div class="tbar e" id="tb4" style="width:0%"></div></div></div>
+      <div class="tr"><div class="trh"><span class="tn">DRIVER ANOMALY</span>
+        <span class="tnum" id="ti5">—</span></div>
+        <div class="tbg"><div class="tbar w" id="tb5" style="width:0%"></div></div></div>
+    </div>
+
+    <div class="fwpanel">
+      <div class="ctl"></div><div class="ctr"></div><div class="cbl"></div><div class="cbr"></div>
+      <div class="pglow"></div>
+      <div class="slbl">FILE WATCHER</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+        <div><div class="vl" style="margin-bottom:2px;">PATHS</div>
+          <div class="vv" style="font-size:20px;" id="fwpaths">—</div>
+          <div class="vs">WATCHED</div></div>
+        <div><div class="vl" style="margin-bottom:2px;">EVENTS</div>
+          <div class="vv" style="font-size:20px;" id="fwev">0</div>
+          <div class="vs">CHANGES</div></div>
+        <div><div class="vl" style="margin-bottom:2px;">ALERTS</div>
+          <div class="vv" style="font-size:20px;" id="fwal">0</div>
+          <div class="vs">SUSPICIOUS</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── BOTTOM TERMINAL ── -->
+<div class="terminal">
+  <div class="thdr">
+    <span class="slbl" style="margin:0;">SYSTEM LOG FEED</span>
+    <span id="adminbadge" style="font-family:var(--fm);font-size:9px;letter-spacing:2px;
+      color:rgba(255,107,53,0.7);display:none;">⚠ LIMITED PRIVILEGES — ADMIN TASKS SKIPPED</span>
+    <span style="font-family:var(--fm);font-size:9px;letter-spacing:2px;
+      color:rgba(0,255,200,0.28);margin-left:auto;" id="logcnt">WAITING...</span>
+  </div>
+  <div class="tlog" id="logel"></div>
+</div>
+</div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,'0');
+function ts() {
+  const n = new Date();
+  return `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+}
+
+// ── CLOCK ─────────────────────────────────────────────────────────────────
+function updateClock() {
+  const n = new Date();
+  $('clk').textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+  const days=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const months=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  $('clkd').textContent =
+    `${days[n.getDay()]} ${months[n.getMonth()]} ${pad(n.getDate())}  //  ${n.getFullYear()}`;
+  $('tdate').textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── GLITCH EFFECTS ─────────────────────────────────────────────────────────
+function triggerTear() {
+  const h = document.querySelector('.cs').offsetHeight;
+  const t1 = $('tear1'), t2 = $('tear2');
+  t1.style.top  = (Math.random() * h * 0.75) + 'px';
+  t1.style.left = (Math.random() * 60) + 'px';
+  t2.style.top  = (Math.random() * h * 0.75 + 40) + 'px';
+  t2.style.left = (Math.random() * 100) + 'px';
+  t1.style.display = t2.style.display = 'block';
+  setTimeout(() => { t1.style.display = t2.style.display = 'none'; },
+    80 + Math.random() * 130);
+}
+(function schedGlitch() {
+  setTimeout(() => {
+    const c = $('clk');
+    c.classList.add('glitch');
+    triggerTear();
+    setTimeout(() => c.classList.remove('glitch'), 500);
+    schedGlitch();
+  }, 6500 + Math.random() * 8000);
+})();
+setInterval(() => { if (Math.random() < 0.16) triggerTear(); }, 3500);
+
+// ── SIMULATED VITALS (will be replaced by real data if C# sends vitals_update) ─
+let vit = { cpu: 8, ram: 4.1, net: 18, disk: 97.4 };
+function updateVitals() {
+  vit.cpu  = Math.max(1, Math.min(95, vit.cpu  + (Math.random() - .47) * 7));
+  vit.ram  = Math.max(1, Math.min(14, vit.ram  + (Math.random() - .5)  * .4));
+  vit.net  = Math.max(0, Math.min(1500, vit.net + (Math.random() - .5)  * 25));
+  vit.disk = Math.max(5, Math.min(900,  vit.disk + (Math.random() - .5)  * .2));
+  const cpuEl = $('vcpu');
+  cpuEl.textContent = Math.round(vit.cpu) + '%';
+  cpuEl.className = 'vv' + (vit.cpu > 55 ? ' o' : '');
+  $('vram').textContent  = vit.ram.toFixed(1) + 'GB';
+  $('vnet').textContent  = vit.net >= 1000
+    ? (vit.net / 1000).toFixed(1) + 'MB/s'
+    : Math.round(vit.net) + 'KB/s';
+  $('vdsk').textContent  = vit.disk.toFixed(1) + 'GB';
+}
+setInterval(updateVitals, 2500);
+
+// ── LOG FEED ───────────────────────────────────────────────────────────────
+let logCount = 0;
+const logEl = $('logel');
+function appendLog(source, msg, level) {
+  const d = document.createElement('div');
+  d.className = 'll';
+  const srcTrunc = source.substring(0,10).toUpperCase();
+  d.innerHTML =
+    `<span class="lts">${ts()}</span>` +
+    `<span class="lsrc ${level || 'sys'}">${srcTrunc}</span>` +
+    `<span class="lmsg">${escHtml(msg)}</span>`;
+  logEl.prepend(d);
+  while (logEl.children.length > 40) logEl.removeChild(logEl.lastChild);
+  logCount++;
+  $('logcnt').textContent = logCount + ' ENTRIES';
+}
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── TASK CARD MAP ─────────────────────────────────────────────────────────
+const CARD_MAP = {
+  'defrag':    { badge:'bdg-defrag',    pb:'pb-defrag',    meta:'meta-defrag' },
+  'dism':      { badge:'bdg-dism',      pb:'pb-dism',      meta:'meta-dism' },
+  'defender':  { badge:'bdg-defender',  pb:'pb-defender',  meta:'meta-defender' },
+  'process':   { badge:'bdg-process',   pb:'pb-process',   meta:'meta-process' },
+  'cache':     { badge:'bdg-cache',     pb:'pb-cache',     meta:'meta-cache' },
+  'driver':    { badge:'bdg-driver',    pb:'pb-driver',    meta:'meta-driver' },
+  'cleanup':   { badge:'bdg-cleanup',   pb:'pb-cleanup',   meta:'meta-cleanup' },
+  'integrity': { badge:'bdg-integrity', pb:'pb-integrity', meta:'meta-integrity' },
+};
+const TASK_NAME_MAP = {
+  'Defender Quick Scan':    'defender',
+  'Browser Cache Purge':    'cache',
+  'File Integrity Monitor': 'integrity',
+  'Process Guard':          'process',
+  'Auto Defrag':            'defrag',
+  'Disk Cleanup':           'cleanup',
+  'DISM Component Store':   'dism',
+  'Driver Health Check':    'driver',
+};
+const STATUS_MAP = {
+  'running': ['b-run',  'RUNNING'],
+  'done':    ['b-done', 'DONE'],
+  'error':   ['b-err',  'ERROR'],
+  'queued':  ['b-q',    'QUEUED'],
+  'skipped': ['b-skip', 'SKIPPED'],
+  'warning': ['b-wrn',  'WARNING'],
+  'watching':['b-run',  'WATCHING'],
+};
+function updateTaskCard(taskId, status, message, progress) {
+  const m = CARD_MAP[taskId];
+  if (!m) return;
+  const badge = $(m.badge), pb = $(m.pb), meta = $(m.meta);
+  if (badge) {
+    const [cls, txt] = STATUS_MAP[status] || ['b-idle','IDLE'];
+    badge.className = 'bdg ' + cls;
+    badge.textContent = txt;
+  }
+  if (pb) {
+    if (progress < 0) { pb.className = 'pb ind'; pb.style.width = ''; }
+    else { pb.className = 'pb'; pb.style.width = Math.min(100, Math.max(0, progress)) + '%'; }
+  }
+  if (meta && message) {
+    meta.innerHTML = escHtml(message.substring(0, 48).toUpperCase());
+  }
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────
+let statsData = { files:0, bytes:0, threats:0, integrity:null, fwev:0, fwal:0, fwpaths:0 };
+function renderStats() {
+  $('rfiles').textContent = statsData.files.toLocaleString();
+  const gb = statsData.bytes / 1073741824;
+  const mb = statsData.bytes / 1048576;
+  $('rspace').textContent = gb >= 1 ? gb.toFixed(1) + 'GB'
+    : mb >= 1 ? mb.toFixed(0) + 'MB'
+    : Math.round(statsData.bytes / 1024) + 'KB';
+  $('rthr').textContent    = statsData.threats;
+  $('rthr').className      = 'sv' + (statsData.threats > 0 ? ' m' : ' g');
+  $('rthrss').textContent  = statsData.threats > 0 ? 'THREATS FOUND!' : 'ALL CLEAR';
+  if (statsData.integrity !== null)
+    $('rint').textContent = statsData.integrity.toFixed(1);
+  $('fwev').textContent    = statsData.fwev;
+  $('fwev').style.color    = statsData.fwev > 10 ? 'var(--o)' : '';
+  $('fwal').textContent    = statsData.fwal;
+  $('fwal').style.color    = statsData.fwal > 0 ? 'var(--m)' : '';
+  if (statsData.fwpaths > 0) $('fwpaths').textContent = statsData.fwpaths;
+}
+
+// ── THREAT BARS ────────────────────────────────────────────────────────────
+const threatData = [0, 0, 0, 0, 0, 0];
+function setThreat(idx, val) {
+  if (idx < 0 || idx > 5) return;
+  threatData[idx] = val;
+  $('ti' + idx).textContent = val;
+  const maxW = Math.min(100, val === 0 ? 0 : Math.max(4, val * 8));
+  $('tb' + idx).style.width = maxW + '%';
+}
+
+// ── ACTIVE TASK COUNTER ────────────────────────────────────────────────────
+let activeTasks = new Set();
+function updateActiveCount() {
+  const n = activeTasks.size;
+  $('tb-active').innerHTML =
+    `<div class="dot ${n > 0 ? 'o p' : ''}"></div>` +
+    (n > 0 ? `${n} TASK${n > 1 ? 'S' : ''} ACTIVE` : 'ALL TASKS IDLE');
+  if (n === 0) {
+    $('clkm').textContent = '◈ MAINTENANCE CYCLE COMPLETE';
+    $('clkm').style.color = 'var(--c)';
+  } else {
+    $('clkm').textContent = `◈ ${n} TASK${n>1?'S':''} RUNNING — MAINTENANCE MODE ACTIVE`;
+    $('clkm').style.color = 'var(--o)';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ◈  THE C# → JS BRIDGE
+//    Called by UIBridge.cs via webView.ExecuteScriptAsync(...)
+// ─────────────────────────────────────────────────────────────────────────────
+window.handleCyberEvent = function(data) {
+  if (!data || !data.type) return;
+  switch (data.type) {
+
+    case 'task_update': {
+      const taskId = TASK_NAME_MAP[data.taskName] || data.taskId;
+      if (!taskId) break;
+      if (data.status === 'running') activeTasks.add(taskId);
+      else activeTasks.delete(taskId);
+      updateActiveCount();
+      updateTaskCard(taskId, data.status, data.message, data.progress != null ? data.progress : -1);
+      break;
+    }
+
+    case 'log_entry': {
+      appendLog(data.source || 'SYS', data.message || '', data.level || 'sys');
+      break;
+    }
+
+    case 'stat_update': {
+      if (data.filesScanned  != null) statsData.files      = data.filesScanned;
+      if (data.bytesFreed    != null) statsData.bytes      = data.bytesFreed;
+      if (data.threatsKilled != null) statsData.threats    = data.threatsKilled;
+      if (data.integrity     != null) statsData.integrity  = data.integrity;
+      if (data.fwEvents      != null) statsData.fwev       = data.fwEvents;
+      if (data.fwAlerts      != null) statsData.fwal       = data.fwAlerts;
+      if (data.fwPaths       != null) statsData.fwpaths    = data.fwPaths;
+      renderStats();
+      break;
+    }
+
+    case 'vitals_update': {
+      if (data.cpu  != null) { vit.cpu  = data.cpu;  }
+      if (data.ram  != null) { vit.ram  = data.ram;  }
+      if (data.net  != null) { vit.net  = data.net;  }
+      if (data.disk != null) { vit.disk = data.disk; }
+      if (data.cores != null) {
+        $('vcpus').textContent = data.cores + ' CORES';
+        $('vramt').textContent = data.totalRam ? 'OF ' + data.totalRam + 'GB' : 'OF —GB';
+      }
+      updateVitals(); // render immediately with new values
+      break;
+    }
+
+    case 'threat_update': {
+      if (Array.isArray(data.matrix)) {
+        data.matrix.forEach((v, i) => setThreat(i, v));
+      }
+      break;
+    }
+
+    case 'system_info': {
+      if (data.adminMode != null && !data.adminMode) {
+        $('adminbadge').style.display = 'inline';
+      }
+      if (data.fwPaths != null) {
+        $('fwpaths').textContent = data.fwPaths;
+        statsData.fwpaths = data.fwPaths;
+      }
+      appendLog('SYSTEM', 'Maintenance daemon initialised. Admin: ' +
+        (data.adminMode ? 'YES' : 'NO — privileged tasks will be skipped.'),
+        data.adminMode ? 'ok' : 'wrn');
+      // Reset all cards from QUEUED → IDLE once initialised
+      Object.keys(CARD_MAP).forEach(id => {
+        if (id !== 'integrity') updateTaskCard(id, 'idle', null, 0);
+      });
+      // Reset threat matrix
+      for (let i = 0; i < 6; i++) { $('ti'+i).textContent = '0'; $('tb'+i).style.width='0%'; }
+      break;
+    }
+  }
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Initial startup message in log
+appendLog('SYSTEM', 'SOFTCURSE LAB Cyber Maintenance OS — UI shell loaded.', 'sys');
+appendLog('SYSTEM', 'Waiting for maintenance daemon to connect...', 'sys');
+</script>
+</body>
+</html>
