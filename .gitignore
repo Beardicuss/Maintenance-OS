@@ -1,0 +1,49 @@
+## Visual Studio 2022 / .NET Core GitIgnore
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bbin/
+obj/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# .NET Core
+project.assets.json
+*.cache
+*.copycomplete
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.useroverride
+*.userprefs
+*.vsp
+*.vspx
+*.sap
+*.vshost.exe
+*.vshost.exe.config
+*.vshost.exe.manifest
+*.vshost.codeAnalysis.xml
+
+# Visual Studio 2015/2017/2019/2022 cache/options directory
+.vs/
+
+# Compiled files
+*.dll
+*.exe
+*.pdb
+*.scr
+
+# Others
+.DS_Store
+[Bb]uild/
