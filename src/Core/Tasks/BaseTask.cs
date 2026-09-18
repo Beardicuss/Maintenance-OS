@@ -27,6 +27,13 @@ public abstract class BaseTask : IMaintenanceTask
         return new WindowsPrincipal(id).IsInRole(WindowsBuiltInRole.Administrator);
     }
 
+    protected static string GetSystemToolPath(string exe)
+    {
+        string sysDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
+        string fullPath = System.IO.Path.Combine(sysDir, exe);
+        return System.IO.File.Exists(fullPath) ? fullPath : exe;
+    }
+
     protected static async Task<(int ExitCode, string Output, string Error)> RunProcessAsync(
         string exe, string args, CancellationToken ct, int timeoutMs = 120_000)
     {

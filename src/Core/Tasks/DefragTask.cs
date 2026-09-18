@@ -44,8 +44,10 @@ public class DefragTask : BaseTask
             string letter = drive.Name.TrimEnd('\\');
             Log(NAME, $"Analysing {letter}...", TaskStatus.Running);
 
+            string defragExe = GetSystemToolPath("defrag.exe");
+
             // /A = analyse only, /U = progress, /V = verbose
-            var (aCode, aOut, _) = await RunProcessAsync("defrag.exe", $"{letter} /A /U", ct, 60_000);
+            var (aCode, aOut, _) = await RunProcessAsync(defragExe, $"{letter} /A /U", ct, 60_000);
 
             // If analysis exit code is 1, drive is fragmented; 0 = not fragmented
             bool needsDefrag = aCode == 1 || aOut.Contains("% fragmented", StringComparison.OrdinalIgnoreCase);
@@ -58,7 +60,7 @@ public class DefragTask : BaseTask
             }
 
             Log(NAME, $"Optimising volume {letter} (Defrag/TRIM)...", TaskStatus.Running);
-            var (dCode, _, dErr) = await RunProcessAsync("defrag.exe", $"{letter} /O /U /V", ct, 3_600_000); // 1hr max
+            var (dCode, _, dErr) = await RunProcessAsync(defragExe, $"{letter} /O /U /V", ct, 3_600_000); // 1hr max
 
             if (dCode == 0) { Log(NAME, $"{letter} defragmentation complete.", TaskStatus.Success); defragged++; }
             else Log(NAME, $"{letter} defrag finished with code {dCode}. {dErr[..Math.Min(60, dErr.Length)]}", TaskStatus.Warning);

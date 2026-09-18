@@ -166,18 +166,43 @@ public partial class ScreensaverWindow : Window
         s.IsSwipeNavigationEnabled       = false;
         s.IsZoomControlEnabled           = false;
         s.AreDefaultScriptDialogsEnabled = false;
+        s.IsGeneralAutofillEnabled       = false;
+        s.IsPinchZoomEnabled             = false;
+        s.AreHostObjectsAllowed          = false;
         Log("Settings applied.");
 
-        // IMPORTANT: allow about:blank (WebView2 internal init) + our file://
+        // Find CyberUI.html — check multiple locations
+        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        string? htmlPath = new[]
+        {
+            Path.Combine(baseDir, "CyberUI.html"),
+            Path.Combine(baseDir, "UI", "CyberUI.html"),
+            Path.Combine(Path.GetDirectoryName(baseDir.TrimEnd('\\','/'))??"", "CyberUI.html"),
+        }.FirstOrDefault(File.Exists);
+
+        if (htmlPath == null)
+        {
+            string msg = $"CyberUI.html not found.\nBase: {baseDir}";
+            Log(msg);
+            ShowFallbackError(msg);
+            return;
+        }
+
+        string expectedUri = new Uri(Path.GetFullPath(htmlPath)).AbsoluteUri;
+
+        // Strict security filter: allow only about:blank and our canonical target HTML URI
         WebView.CoreWebView2.NavigationStarting += (_, args) =>
         {
             var uri = args.Uri ?? "";
             Log($"NavigationStarting: {uri}");
             bool allowed = uri.Length == 0
                         || uri.Equals("about:blank", StringComparison.OrdinalIgnoreCase)
-                        || uri.StartsWith("file://", StringComparison.OrdinalIgnoreCase);
+                        || uri.Equals(expectedUri, StringComparison.OrdinalIgnoreCase);
             if (!allowed)
+            {
+                Log($"Navigation CANCELED (security filter): {uri}");
                 args.Cancel = true;
+            }
         };
 
         WebView.CoreWebView2.NavigationCompleted += (_, args) =>
@@ -200,25 +225,8 @@ public partial class ScreensaverWindow : Window
 
         WebView.CoreWebView2.DOMContentLoaded += OnDomContentLoaded;
 
-        // Find CyberUI.html — check multiple locations
-        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        string? htmlPath = new[]
-        {
-            Path.Combine(baseDir, "CyberUI.html"),
-            Path.Combine(baseDir, "UI", "CyberUI.html"),
-            Path.Combine(Path.GetDirectoryName(baseDir.TrimEnd('\\','/'))??"", "CyberUI.html"),
-        }.FirstOrDefault(File.Exists);
-
-        if (htmlPath == null)
-        {
-            string msg = $"CyberUI.html not found.\nBase: {baseDir}";
-            Log(msg);
-            ShowFallbackError(msg);
-            return;
-        }
-
         Log($"Loading: {htmlPath}");
-        WebView.Source = new Uri(Path.GetFullPath(htmlPath));
+        WebView.Source = new Uri(expectedUri);
     }
 
     // ── DOM ready → start tasks ───────────────────────────────────────────

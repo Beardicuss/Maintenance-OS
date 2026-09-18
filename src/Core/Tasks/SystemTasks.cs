@@ -27,7 +27,7 @@ public class DiskCleanupTask : BaseTask
 
         Log(NAME, "Running disk cleanup (silent)...", TaskStatus.Running);
         var (code, _, err) = await RunProcessAsync(
-            "cleanmgr.exe", $"/sagerun:{SAGE_ID}", ct, timeoutMs: 600_000);
+            GetSystemToolPath("cleanmgr.exe"), $"/sagerun:{SAGE_ID}", ct, timeoutMs: 600_000);
 
         if (code == 0)
             Log(NAME, "Disk cleanup completed successfully.", TaskStatus.Success);
@@ -88,10 +88,12 @@ public class DismCleanupTask : BaseTask
             return;
         }
 
+        string dismExe = GetSystemToolPath("dism.exe");
+
         // First: check image health
         Log(NAME, "Checking Windows image health...", TaskStatus.Running);
         var (chkCode, chkOut, _) = await RunProcessAsync(
-            "dism.exe", "/Online /Cleanup-Image /CheckHealth", ct, 120_000);
+            dismExe, "/Online /Cleanup-Image /CheckHealth", ct, 120_000);
 
         bool healthy = chkCode == 0 && !chkOut.Contains("repairable", StringComparison.OrdinalIgnoreCase);
         Log(NAME, $"Image health: {(healthy ? "HEALTHY" : "NEEDS REPAIR")}.", healthy ? TaskStatus.Success : TaskStatus.Warning);
@@ -99,7 +101,7 @@ public class DismCleanupTask : BaseTask
         // StartComponentCleanup
         Log(NAME, "Cleaning component store (may take 5–15 min)...", TaskStatus.Running);
         var (code, out_, err) = await RunProcessAsync(
-            "dism.exe",
+            dismExe,
             "/Online /Cleanup-Image /StartComponentCleanup /ResetBase",
             ct,
             timeoutMs: 1_800_000); // 30 min max
@@ -131,14 +133,17 @@ public class DriverHealthTask : BaseTask
             return;
         }
 
+        string pnpUtilExe = GetSystemToolPath("pnputil.exe");
+        string dismExe    = GetSystemToolPath("dism.exe");
+
         Log(NAME, "Querying installed drivers via pnputil...", TaskStatus.Running);
-        var (code, out_, _) = await RunProcessAsync("pnputil.exe", "/enum-drivers", ct, 60_000);
+        var (code, out_, _) = await RunProcessAsync(pnpUtilExe, "/enum-drivers", ct, 60_000);
 
         if (code != 0)
         {
             Log(NAME, "pnputil failed. Falling back to DISM driver enum...", TaskStatus.Warning);
             var (dc, dOut, _) = await RunProcessAsync(
-                "dism.exe", "/Online /Get-Drivers /Format:Table", ct, 60_000);
+                dismExe, "/Online /Get-Drivers /Format:Table", ct, 60_000);
             out_ = dOut;
         }
 
@@ -171,7 +176,7 @@ public class DriverHealthTask : BaseTask
 
         // Also run SFC scan report (non-interactive)
         Log(NAME, "Running System File Checker (sfc /verifyonly)...", TaskStatus.Running);
-        var (sfcCode, sfcOut, _) = await RunProcessAsync("sfc.exe", "/verifyonly", ct, 300_000);
+        var (sfcCode, sfcOut, _) = await RunProcessAsync(GetSystemToolPath("sfc.exe"), "/verifyonly", ct, 300_000);
 
         bool sfcOk = sfcCode == 0 || sfcOut.Contains("did not find", StringComparison.OrdinalIgnoreCase);
         Log(NAME, sfcOk ? "SFC: No integrity violations found." : "SFC: Windows found integrity violations — run 'sfc /scannow'.", sfcOk ? TaskStatus.Success : TaskStatus.Warning);
