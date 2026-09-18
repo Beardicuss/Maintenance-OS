@@ -45,14 +45,38 @@ public abstract class BaseTask : IMaintenanceTask
         proc.OutputDataReceived += (_, d) => { if (d.Data != null) stdout.AppendLine(d.Data); };
         proc.ErrorDataReceived  += (_, d) => { if (d.Data != null) stderr.AppendLine(d.Data); };
 
-        proc.Start();
+        try
+        {
+            if (!proc.Start())
+                return (-1, string.Empty, $"Failed to start process '{exe}'.");
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            return (-1, string.Empty, $"Win32 error starting '{exe}': {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return (-1, string.Empty, $"Error starting '{exe}': {ex.Message}");
+        }
+
         proc.BeginOutputReadLine();
         proc.BeginErrorReadLine();
 
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeoutCts.CancelAfter(timeoutMs);
-        try { await proc.WaitForExitAsync(timeoutCts.Token); }
-        catch (OperationCanceledException) { try { proc.Kill(true); } catch { } }
+        try
+        {
+            await proc.WaitForExitAsync(timeoutCts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            try { proc.Kill(true); } catch { }
+            return (-1, stdout.ToString().Trim(), "Process execution timed out or was cancelled.");
+        }
+        catch (Exception ex)
+        {
+            return (-1, stdout.ToString().Trim(), $"Process execution error: {ex.Message}");
+        }
 
         return (proc.ExitCode, stdout.ToString().Trim(), stderr.ToString().Trim());
     }

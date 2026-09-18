@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>SOFTCURSE LAB</title>
 <!-- No external font dependencies — all system fonts, works offline in screensaver context -->
@@ -465,6 +466,7 @@ function appendLog(source, msg, level) {
     `<span class="lmsg">${escHtml(msg)}</span>`;
   logEl.prepend(d);
   while (logEl.children.length > 40) logEl.removeChild(logEl.lastChild);
+  logEl.scrollTop = 0;
   logCount++;
   $('logcnt').textContent = logCount + ' ENTRIES';
 }
@@ -603,10 +605,12 @@ window.handleCyberEvent = function(data) {
     }
 
     case 'vitals_update': {
-      if (data.cpu  != null) { vit.cpu  = data.cpu;  }
-      if (data.ram  != null) { vit.ram  = data.ram;  }
-      if (data.net  != null) { vit.net  = data.net;  }
-      if (data.disk != null) { vit.disk = data.disk; }
+      if (data.cpu      != null) { vit.cpu  = data.cpu;  }
+      if (data.usedRam  != null) { vit.ram  = data.usedRam; }
+      else if (data.ram != null) { vit.ram  = data.ram;  }
+      if (data.net      != null) { vit.net  = data.net;  }
+      if (data.diskFree != null) { vit.disk = data.diskFree; }
+      else if (data.disk!= null) { vit.disk = data.disk; }
       if (data.cores != null) {
         $('vcpus').textContent = data.cores + ' CORES';
         $('vramt').textContent = data.totalRam ? 'OF ' + data.totalRam + 'GB' : 'OF —GB';

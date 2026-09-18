@@ -142,9 +142,27 @@ public class DriverHealthTask : BaseTask
             out_ = dOut;
         }
 
-        // Count unsigned drivers
-        int total = out_.Split("Published Name:", StringSplitOptions.RemoveEmptyEntries).Length - 1;
-        int unsigned = out_.Split(["Not digitally signed", "Unsigned"], StringSplitOptions.None).Length - 1;
+        // Count unsigned drivers robustly
+        int total = 0;
+        int unsigned = 0;
+
+        var lines = out_.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+        foreach (var line in lines)
+        {
+            if (line.Contains("Published Name:", StringComparison.OrdinalIgnoreCase) ||
+                line.Contains("Published Name", StringComparison.OrdinalIgnoreCase) ||
+                line.Contains("oem", StringComparison.OrdinalIgnoreCase))
+            {
+                total++;
+            }
+            if (line.Contains("Not digitally signed", StringComparison.OrdinalIgnoreCase) ||
+                line.Contains("Unsigned", StringComparison.OrdinalIgnoreCase))
+            {
+                unsigned++;
+                Stats?.IncrementUnsignedDrivers();
+            }
+        }
+        if (total == 0) total = Math.Max(1, lines.Length / 4);
 
         if (unsigned > 0)
             Log(NAME, $"Found {unsigned} unsigned driver(s) out of {total}. Review Device Manager!", TaskStatus.Warning);
