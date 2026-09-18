@@ -43,6 +43,7 @@ public class FileIntegrityTask : BaseTask
                     NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size,
                     Filter = "*.*",
                     IncludeSubdirectories = false,
+                    InternalBufferSize = 65536,
                     EnableRaisingEvents = true
                 };
                 w.Created += OnChange;

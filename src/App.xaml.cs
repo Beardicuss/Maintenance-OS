@@ -32,7 +32,7 @@ public partial class App : Application
         ScreensaverWindow.Log($"Args: [{rawArgs}]  CmdLine: {Environment.CommandLine}");
 
         // ── Parse screensaver arguments ────────────────────────────────────────
-        // Windows passes: /s  /p HWND  /p:HWND  /c  (or nothing for configure)
+        // Windows passes: /s, /p HWND, /p:HWND, /c, /c:HWND, /c HWND, /a, etc.
         string mode = e.Args.Length > 0 ? e.Args[0].Trim() : "/c";
 
         bool isShow    = mode.Equals("/s", StringComparison.OrdinalIgnoreCase) ||
@@ -52,13 +52,17 @@ public partial class App : Application
         {
             IntPtr hwnd = IntPtr.Zero;
 
-            // /p:12345  (colon form)
+            // /p:12345 (colon form)
             string suffix = mode.Length > 2 ? mode[2..].TrimStart(':', ' ') : "";
             if (suffix.Length > 0 && long.TryParse(suffix, out long h1))
+            {
                 hwnd = new IntPtr(h1);
-            // /p 12345  (space-separated)
+            }
+            // /p 12345 (space-separated)
             else if (e.Args.Length > 1 && long.TryParse(e.Args[1].Trim(), out long h2))
+            {
                 hwnd = new IntPtr(h2);
+            }
 
             ScreensaverWindow.Log($"Mode: /p  HWND={hwnd}");
             var win = new ScreensaverWindow(previewHwnd: hwnd);
@@ -66,7 +70,7 @@ public partial class App : Application
             return;
         }
 
-        // /c or default — configuration dialog
+        // /c, /a or default — configuration dialog
         ScreensaverWindow.Log("Mode: /c configure");
         var cfg = new ConfigWindow();
         cfg.ShowDialog();

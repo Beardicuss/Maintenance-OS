@@ -127,22 +127,49 @@ public class UIBridge
         Send(new { type = "threat_update", matrix });
     }
 
-    // ── Push simulated vitals (approximated from environment) ─────────────
+    // ── Push real system vitals ───────────────────────────────────────────
     public void PushVitals()
     {
         if (!_webviewReady) return;
-        var proc  = System.Diagnostics.Process.GetCurrentProcess();
-        long   wsMb = proc.WorkingSet64 / 1_048_576;
-        int    cores = Environment.ProcessorCount;
-
-        // We can't get real CPU% without a PerformanceCounter (requires admin or
-        // elevated startup) — send structural info only; JS handles fake fluctuation
-        Send(new
+        try
         {
-            type     = "vitals_update",
-            cores    = cores,
-            totalRam = GetTotalRamGb(),
-        });
+            int cores = Environment.ProcessorCount;
+            double totalRamGb = 0;
+            double usedRamGb = 0;
+
+            try
+            {
+                var status = new NativeMethods.MEMORYSTATUSEX();
+                if (NativeMethods.GlobalMemoryStatusEx(status))
+                {
+                    totalRamGb = status.ullTotalPhys / 1_073_741_824.0;
+                    double availRamGb = status.ullAvailPhys / 1_073_741_824.0;
+                    usedRamGb = Math.Max(0, totalRamGb - availRamGb);
+                }
+            }
+            catch { }
+
+            double cFreeGb = 0;
+            try
+            {
+                var cDrive = System.IO.DriveInfo.GetDrives().FirstOrDefault(d => d.IsReady && string.Equals(d.Name, @"C:\", StringComparison.OrdinalIgnoreCase));
+                if (cDrive != null)
+                {
+                    cFreeGb = cDrive.AvailableFreeSpace / 1_073_741_824.0;
+                }
+            }
+            catch { }
+
+            Send(new
+            {
+                type     = "vitals_update",
+                cores    = cores,
+                totalRam = (int)Math.Round(totalRamGb),
+                usedRam  = Math.Round(usedRamGb, 1),
+                diskFree = Math.Round(cFreeGb, 1)
+            });
+        }
+        catch { }
     }
 
     // ── Serialise and inject ──────────────────────────────────────────────

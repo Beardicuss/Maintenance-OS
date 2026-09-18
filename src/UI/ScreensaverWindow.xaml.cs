@@ -12,9 +12,10 @@ namespace SoftcurseLab.UI;
 public partial class ScreensaverWindow : Window
 {
     // ── Win32 for /p HWND child-window embedding ──────────────────────────
-    private const int GWL_STYLE = -16;
-    private const int WS_CHILD  = 0x40000000;
-    private const int WS_POPUP  = unchecked((int)0x80000000);
+    private const int GWL_STYLE  = -16;
+    private const int WS_CHILD   = 0x40000000;
+    private const int WS_VISIBLE = 0x10000000;
+    private const int WS_POPUP   = unchecked((int)0x80000000);
 
     [DllImport("user32.dll")] static extern IntPtr SetParent(IntPtr hWnd, IntPtr hParent);
     [DllImport("user32.dll")] static extern int    SetWindowLong(IntPtr hWnd, int idx, int val);
@@ -107,10 +108,17 @@ public partial class ScreensaverWindow : Window
             if (myHwnd == IntPtr.Zero) return;
 
             int style = GetWindowLong(myHwnd, GWL_STYLE);
-            style = (style & ~WS_POPUP) | WS_CHILD;
+            style = (style & ~WS_POPUP) | WS_CHILD | WS_VISIBLE;
             SetWindowLong(myHwnd, GWL_STYLE, style);
             SetParent(myHwnd, _previewHwnd);
-            Left = 0; Top = 0;
+
+            if (GetClientRect(_previewHwnd, out RECT r))
+            {
+                Left = 0;
+                Top = 0;
+                Width = Math.Max(1, r.R - r.L);
+                Height = Math.Max(1, r.B - r.T);
+            }
         }
         catch (Exception ex) { Log($"EmbedInParent: {ex.Message}"); }
     }
@@ -257,6 +265,7 @@ public partial class ScreensaverWindow : Window
     // ── Input handlers ────────────────────────────────────────────────────
     private void Window_KeyDown(object s, KeyEventArgs e)
     {
+        if (_isPreviewPane) return;
         Log($"KeyDown: armed={_inputArmed} key={e.Key}");
         if (!_inputArmed) return;
         ExitScreensaver();
@@ -264,6 +273,7 @@ public partial class ScreensaverWindow : Window
 
     private void Window_MouseDown(object s, MouseButtonEventArgs e)
     {
+        if (_isPreviewPane) return;
         Log($"MouseDown: armed={_inputArmed}");
         if (!_inputArmed) return;
         ExitScreensaver();
@@ -271,6 +281,7 @@ public partial class ScreensaverWindow : Window
 
     private void Window_MouseMove(object s, MouseEventArgs e)
     {
+        if (_isPreviewPane) return;
         var pos = e.GetPosition(this);
         if (!_inputArmed)
         {

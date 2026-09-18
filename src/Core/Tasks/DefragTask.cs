@@ -57,8 +57,8 @@ public class DefragTask : BaseTask
                 continue;
             }
 
-            Log(NAME, $"Defragmenting {letter} (this may take minutes)...", TaskStatus.Running);
-            var (dCode, _, dErr) = await RunProcessAsync("defrag.exe", $"{letter} /U /V", ct, 3_600_000); // 1hr max
+            Log(NAME, $"Optimising volume {letter} (Defrag/TRIM)...", TaskStatus.Running);
+            var (dCode, _, dErr) = await RunProcessAsync("defrag.exe", $"{letter} /O /U /V", ct, 3_600_000); // 1hr max
 
             if (dCode == 0) { Log(NAME, $"{letter} defragmentation complete.", TaskStatus.Success); defragged++; }
             else Log(NAME, $"{letter} defrag finished with code {dCode}. {dErr[..Math.Min(60, dErr.Length)]}", TaskStatus.Warning);

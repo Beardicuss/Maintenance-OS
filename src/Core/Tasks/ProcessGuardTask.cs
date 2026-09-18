@@ -43,6 +43,7 @@ public class ProcessGuardTask : BaseTask
         foreach (var proc in procs)
         {
             if (ct.IsCancellationRequested) break;
+            if (proc.Id <= 4) { proc.Dispose(); continue; } // System Idle Process (0), System (4)
             try
             {
                 string? path = null;
@@ -50,7 +51,7 @@ public class ProcessGuardTask : BaseTask
 
                 if (path == null || !File.Exists(path)) continue;
 
-                string hash = await ComputeSha256Async(path);
+                string hash = await ComputeSha256Async(path, ct);
                 scanned++;
 
                 if (MaliciousHashes.Contains(hash))
@@ -80,11 +81,11 @@ public class ProcessGuardTask : BaseTask
             Log(NAME, $"Clean — {scanned} processes scanned, 0 threats detected.{(errors > 0 ? $" ({errors} inaccessible)" : "")}", TaskStatus.Success);
     }
 
-    private static async Task<string> ComputeSha256Async(string filePath)
+    private static async Task<string> ComputeSha256Async(string filePath, CancellationToken ct)
     {
         using var sha = SHA256.Create();
-        await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
-        var hash = await sha.ComputeHashAsync(stream);
+        await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 65536, true);
+        var hash = await sha.ComputeHashAsync(stream, ct);
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 }
